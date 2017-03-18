@@ -2,34 +2,27 @@ package com.corbym.checkout;
 
 
 import com.corbym.checkout.domain.DiscountRule;
-import com.corbym.checkout.domain.StockUnitPriceRule;
+import com.corbym.checkout.domain.StockKeepingUnitPriceRule;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
-
 /**
- * This class is not thread safe. Create a new instance of this class
- * per transaction / thread.
- *
+ * This class is not thread safe, the shopping list is stateful.
+ * Create a new instance of this class per transaction / thread.
  */
 public class CheckoutSystem {
 
-    private final Map<String, StockUnitPriceRule> stockUnitPricingRules;
-    private final Map<String, DiscountRule> discountRules;
+    private final Map<String, StockKeepingUnitPriceRule> stockUnitPricingRules;
 
     private final List<String> shoppingList = new ArrayList<>();
 
-    public CheckoutSystem(List<StockUnitPriceRule> stockUnitPricingRules) {
-        this(stockUnitPricingRules, emptyList());
-    }
-
-    public CheckoutSystem(List<StockUnitPriceRule> stockUnitPricingRules,
-                          List<DiscountRule> discountRule) {
-        this.stockUnitPricingRules = convertPricingRulesToMap(stockUnitPricingRules);
-        this.discountRules = convertDiscountRulesToMap(discountRule);
+    public CheckoutSystem(List<StockKeepingUnitPriceRule> stockKeepingUnitPricingRules) {
+        this.stockUnitPricingRules = convertPricingRulesToMap(stockKeepingUnitPricingRules);
     }
 
     /**
@@ -38,6 +31,9 @@ public class CheckoutSystem {
      * @param stockKeepingUnit - the item's SKU identifier
      */
     public void scanItem(String stockKeepingUnit) {
+        if (!stockUnitPricingRules.containsKey(stockKeepingUnit)) {
+            throw new IllegalArgumentException("Unknown SKU specified.");
+        }
         shoppingList.add(stockKeepingUnit);
     }
 
@@ -53,36 +49,27 @@ public class CheckoutSystem {
     private long calculateGrossAmountBeforeDiscount() {
         return shoppingList.stream()
                 .map(stockUnitPricingRules::get)
-                .mapToLong(StockUnitPriceRule::unitPrice)
+                .mapToLong(StockKeepingUnitPriceRule::unitPrice)
                 .sum();
     }
 
     private long calculateTotalDiscount() {
-        Map<String, Long> countOfUniqueSkus = shoppingList.stream()
+        Map<String, Long> countOfShoppingListGroupedBySkus = shoppingList.stream()
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-        return countOfUniqueSkus.keySet().stream()
-                .map(discountRules::get)
-                .filter(Objects::nonNull)
-                .mapToLong((discountRule) -> {
-                    String itemId = discountRule.getStockKeepingUnit();
-                    return discountRule.getTotalDiscount(countOfUniqueSkus.get(itemId));
+        return countOfShoppingListGroupedBySkus.keySet().stream()
+                .mapToLong(sku -> {
+                    StockKeepingUnitPriceRule stockKeepingUnitPriceRule = stockUnitPricingRules.get(sku);
+                    DiscountRule discountRule = stockKeepingUnitPriceRule.getDiscountRule();
+                    return discountRule == null ? 0 : discountRule.getTotalDiscount(countOfShoppingListGroupedBySkus.get(sku));
                 }).sum();
     }
 
-    private Map<String, StockUnitPriceRule> convertPricingRulesToMap(List<StockUnitPriceRule> stockUnitPricingRules) {
-        Map<String, StockUnitPriceRule> stockUnitPriceRuleMap = new HashMap<>();
-        for (StockUnitPriceRule stockUnitPricingRule : stockUnitPricingRules) {
+    private Map<String, StockKeepingUnitPriceRule> convertPricingRulesToMap(List<StockKeepingUnitPriceRule> stockUnitPricingRules) {
+        Map<String, StockKeepingUnitPriceRule> stockUnitPriceRuleMap = new HashMap<>();
+        for (StockKeepingUnitPriceRule stockUnitPricingRule : stockUnitPricingRules) {
             stockUnitPriceRuleMap.put(stockUnitPricingRule.getStockKeepingUnit(), stockUnitPricingRule);
         }
         return stockUnitPriceRuleMap;
-    }
-
-    private Map<String, DiscountRule> convertDiscountRulesToMap(List<DiscountRule> discountRule) {
-        Map<String, DiscountRule> discountRuleMap = new HashMap<>();
-        for (DiscountRule stockUnitPricingRule : discountRule) {
-            discountRuleMap.put(stockUnitPricingRule.getStockKeepingUnit(), stockUnitPricingRule);
-        }
-        return discountRuleMap;
     }
 }

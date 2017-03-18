@@ -1,18 +1,24 @@
 package com.corbym.checkout;
 
 import com.corbym.checkout.domain.DiscountRule;
-import com.corbym.checkout.domain.StockUnitPriceRule;
+import com.corbym.checkout.domain.StockKeepingUnitPriceRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 public class CheckoutSystemTest {
 
+    @Rule
+    public final ExpectedException expectedException = ExpectedException.none();
+
     private final CheckoutSystem underTest = new CheckoutSystem(
-            asList(new StockUnitPriceRule("A", 50),
-                    new StockUnitPriceRule("B", 30))
+            asList(new StockKeepingUnitPriceRule("A", 50),
+                    new StockKeepingUnitPriceRule("B", 30))
     );
 
     @Test
@@ -32,28 +38,36 @@ public class CheckoutSystemTest {
 
     @Test
     public void checkoutSystemScansMoreThanOneItemOfWithDifferentTypesThenCalculatesTheCorrectTotalPrice() {
+
         underTest.scanItem("B");
         underTest.scanItem("A");
+        underTest.scanItem("B");
 
-        assertThat(underTest.calculateTotalCostInPence(), is(80L));
+        assertThat(underTest.calculateTotalCostInPence(), is(110L));
     }
 
 
     @Test
-    public void stockKeepingUnitWithSpecialPriceTriggersADiscountCalculatingTheTotalPrice(){
+    public void stockKeepingUnitWithSpecialPriceTriggersADiscountCalculatingTheTotalPrice() {
         final CheckoutSystem underTest = new CheckoutSystem(
-                asList(new StockUnitPriceRule("A", 50)),
-                asList(new DiscountRule("A", 3, 20))
+                asList(new StockKeepingUnitPriceRule("A", 50L,
+                        new DiscountRule(5L, 20L)))
         );
         underTest.scanItem("A");
         underTest.scanItem("A");
         underTest.scanItem("A");
         underTest.scanItem("A");
         underTest.scanItem("A");
-        underTest.scanItem("A");
 
-        assertThat(underTest.calculateTotalCostInPence(), is(260L));
+        assertThat(underTest.calculateTotalCostInPence(), is(230L));
 
+    }
+
+    @Test
+    public void unknownStockKeepingUnitThrowsException() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(equalTo("Unknown SKU specified."));
+        underTest.scanItem("unknownSku");
     }
 
 }
