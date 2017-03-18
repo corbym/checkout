@@ -71,7 +71,7 @@ public class CheckoutSystemTest {
     public void discountWithZeroPenceDiscountsNothingFromExpectedPrice() {
         final CheckoutSystem underTest = new CheckoutSystem(
                 singletonList(new StockKeepingUnitPriceRule("A", 50L,
-                        new DiscountRule(5L, 0L)))
+                        new DiscountRule(1L, 0L)))
         );
         underTest.scanItem("A");
         underTest.scanItem("A");
