@@ -3,8 +3,9 @@ package com.corbym.checkout.domain;
 public class StockKeepingUnitPriceRule {
 
     private final String stockKeepingUnit;
-    private final long unitPrice;
     private final DiscountRule discountRule;
+
+    private final long unitPriceInPence;
 
     public StockKeepingUnitPriceRule(String stockKeepingUnit, long unitPriceInPence) {
        this(stockKeepingUnit, unitPriceInPence, null);
@@ -12,12 +13,12 @@ public class StockKeepingUnitPriceRule {
 
     public StockKeepingUnitPriceRule(String stockKeepingUnit, long unitPriceInPence, DiscountRule discountRule) {
         this.stockKeepingUnit = stockKeepingUnit;
-        this.unitPrice = unitPriceInPence;
+        this.unitPriceInPence = unitPriceInPence;
         this.discountRule = discountRule;
     }
 
-    public long unitPrice() {
-        return unitPrice;
+    public long getUnitPriceInPence() {
+        return unitPriceInPence;
     }
 
     public String getStockKeepingUnit() {

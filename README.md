@@ -1,2 +1,9 @@
-# checkout
-Checkout Code Kata
+# Checkout Kata
+Assumptions: 
+
+* Each transaction the user requires should create a new CheckoutSystem object rather than reuse as a singleton.
+* Transactions were not modelled, althought they were mentioned in the specification. This is up to the user to implement.
+* Items are scanned one at a time.
+* No validation required for the pricing rules - e.g. prices can be negative, discounts can actually increase the price if required.
+* If discounts are given with triggering amounts less than or equal to zero, the buisiness wants them applied anyway. Normally I would consult with the BA.
+* The tests written are both unit and acceptance tests in the same.
