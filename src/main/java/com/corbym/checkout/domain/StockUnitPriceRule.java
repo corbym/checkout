@@ -2,11 +2,11 @@ package com.corbym.checkout.domain;
 
 public class StockUnitPriceRule {
 
-    private final String itemId;
+    private final String stockKeepingUnit;
     private final long unitPrice;
 
-    public StockUnitPriceRule(String itemId, long unitPriceInPence) {
-        this.itemId = itemId;
+    public StockUnitPriceRule(String stockKeepingUnit, long unitPriceInPence) {
+        this.stockKeepingUnit = stockKeepingUnit;
         this.unitPrice = unitPriceInPence;
     }
 
@@ -14,7 +14,7 @@ public class StockUnitPriceRule {
         return unitPrice;
     }
 
-    public String getItemId() {
-        return itemId;
+    public String getStockKeepingUnit() {
+        return stockKeepingUnit;
     }
 }
