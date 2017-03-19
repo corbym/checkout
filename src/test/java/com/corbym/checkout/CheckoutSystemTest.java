@@ -2,7 +2,7 @@ package com.corbym.checkout;
 
 import com.corbym.checkout.domain.DiscountRule;
 import com.corbym.checkout.domain.StockKeepingUnit;
-import com.corbym.checkout.domain.StockKeepingUnitPriceRule;
+import com.corbym.checkout.domain.PriceRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -21,9 +21,9 @@ public class CheckoutSystemTest {
     public final ExpectedException expectedException = ExpectedException.none();
 
     private final CheckoutSystem underTest = new CheckoutSystem(
-            asList(new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 50L),
-                    new StockKeepingUnitPriceRule(StockKeepingUnit.of("B"), 30L),
-                    new StockKeepingUnitPriceRule(StockKeepingUnit.of("C"), 20L)
+            asList(new PriceRule(StockKeepingUnit.of("A"), 50L),
+                    new PriceRule(StockKeepingUnit.of("B"), 30L),
+                    new PriceRule(StockKeepingUnit.of("C"), 20L)
             )
     );
 
@@ -55,7 +55,7 @@ public class CheckoutSystemTest {
     @Test
     public void stockKeepingUnitWithSpecialPriceTriggersADiscountCalculatingTheTotalPrice() {
         final CheckoutSystem underTest = new CheckoutSystem(
-                singletonList(new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 50L,
+                singletonList(new PriceRule(StockKeepingUnit.of("A"), 50L,
                         new DiscountRule(5L, 20L)))
         );
         underTest.scanItem(StockKeepingUnit.of("A"));
@@ -71,7 +71,7 @@ public class CheckoutSystemTest {
     @Test
     public void discountWithZeroPenceDiscountsNothingFromExpectedPrice() {
         final CheckoutSystem underTest = new CheckoutSystem(
-                singletonList(new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 50L,
+                singletonList(new PriceRule(StockKeepingUnit.of("A"), 50L,
                         new DiscountRule(1L, 0L)))
         );
         underTest.scanItem(StockKeepingUnit.of("A"));
@@ -86,8 +86,8 @@ public class CheckoutSystemTest {
     public void discountTriggerAtOrBelowLowestBoundIsAppliedToEveryStockKeepingUnit() {
         final CheckoutSystem underTest = new CheckoutSystem(
                 asList(
-                        new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 50L, new DiscountRule(0, 10L)),
-                        new StockKeepingUnitPriceRule(StockKeepingUnit.of("B"), 30L, new DiscountRule(-1, 10L)))
+                        new PriceRule(StockKeepingUnit.of("A"), 50L, new DiscountRule(0, 10L)),
+                        new PriceRule(StockKeepingUnit.of("B"), 30L, new DiscountRule(-1, 10L)))
         );
         underTest.scanItem(StockKeepingUnit.of("A"));
         underTest.scanItem(StockKeepingUnit.of("B"));
@@ -99,7 +99,7 @@ public class CheckoutSystemTest {
     @Test
     public void negativeDiscountAmountsCalculateExpectedPriceRise() {
         final CheckoutSystem underTest = new CheckoutSystem(
-                singletonList(new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 50L,
+                singletonList(new PriceRule(StockKeepingUnit.of("A"), 50L,
                         new DiscountRule(2L, -20L)))
         );
         underTest.scanItem(StockKeepingUnit.of("A"));
@@ -125,7 +125,7 @@ public class CheckoutSystemTest {
         final CheckoutSystem underTest = new CheckoutSystem(
                 Arrays.asList(
                         earlierPriceRule(),
-                new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 20L,
+                new PriceRule(StockKeepingUnit.of("A"), 20L,
                                 new DiscountRule(3L, 20L)))
         );
         underTest.scanItem(StockKeepingUnit.of("A"));
@@ -146,9 +146,16 @@ public class CheckoutSystemTest {
         underTest.scanItem(StockKeepingUnit.of("unknownSku"));
     }
 
+    @Test
+    public void invalidPricingRulesThrowsIllegalArgumentException(){
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(equalTo("List of PriceRule objects cannot be null."));
 
-    private StockKeepingUnitPriceRule earlierPriceRule() {
-        return new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 50L,
+        new CheckoutSystem(null);
+    }
+
+    private PriceRule earlierPriceRule() {
+        return new PriceRule(StockKeepingUnit.of("A"), 50L,
                 new DiscountRule(2L, 10L));
     }
 }

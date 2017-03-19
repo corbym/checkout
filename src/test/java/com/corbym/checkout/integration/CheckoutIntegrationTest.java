@@ -4,7 +4,7 @@ package com.corbym.checkout.integration;
 import com.corbym.checkout.CheckoutSystem;
 import com.corbym.checkout.domain.DiscountRule;
 import com.corbym.checkout.domain.StockKeepingUnit;
-import com.corbym.checkout.domain.StockKeepingUnitPriceRule;
+import com.corbym.checkout.domain.PriceRule;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
@@ -23,7 +23,7 @@ public class CheckoutIntegrationTest {
     public void scanningItemsAndCalculatingTotalCostIsThreadsafe() throws InterruptedException {
 
         ExecutorService executorService = Executors.newFixedThreadPool(TOTAL_THREADS);
-        CheckoutSystem checkoutSystem = new CheckoutSystem(singletonList(new StockKeepingUnitPriceRule(StockKeepingUnit.of("A"), 10L, new DiscountRule(0L, 0))));
+        CheckoutSystem checkoutSystem = new CheckoutSystem(singletonList(new PriceRule(StockKeepingUnit.of("A"), 10L, new DiscountRule(0L, 0))));
         for (int t = 0; t <= TOTAL_THREADS; t++) {
             executorService.submit(() -> {
                 for (int i = 0; i < 10; i++) {

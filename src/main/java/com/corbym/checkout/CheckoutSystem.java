@@ -1,9 +1,8 @@
 package com.corbym.checkout;
 
 
-import com.corbym.checkout.domain.DiscountRule;
+import com.corbym.checkout.domain.PriceRule;
 import com.corbym.checkout.domain.StockKeepingUnit;
-import com.corbym.checkout.domain.StockKeepingUnitPriceRule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,12 +23,12 @@ import static java.util.stream.Collectors.counting;
  */
 public class CheckoutSystem {
 
-    private final Map<StockKeepingUnit, StockKeepingUnitPriceRule> stockUnitPricingRules;
+    private final Map<StockKeepingUnit, PriceRule> pricingRules;
 
     private final List<StockKeepingUnit> shoppingList = synchronizedList(new ArrayList<>());
 
-    public CheckoutSystem(List<StockKeepingUnitPriceRule> stockKeepingUnitPricingRules) {
-        this.stockUnitPricingRules = convertPricingRulesToMap(stockKeepingUnitPricingRules);
+    public CheckoutSystem(List<PriceRule> priceRules) {
+        this.pricingRules = convertPricingRulesToMap(priceRules);
     }
 
     /**
@@ -40,7 +39,7 @@ public class CheckoutSystem {
      * @param stockKeepingUnit a stock keeping unit to scan
      */
     public void scanItem(StockKeepingUnit stockKeepingUnit) {
-        if (!stockUnitPricingRules.containsKey(stockKeepingUnit)) {
+        if (!pricingRules.containsKey(stockKeepingUnit)) {
             throw new IllegalArgumentException("Unknown SKU specified.");
         }
         shoppingList.add(stockKeepingUnit);
@@ -63,8 +62,8 @@ public class CheckoutSystem {
 
     private long calculateGrossAmountBeforeDiscount(final ArrayList<StockKeepingUnit> copyOfShoppingList) {
         return copyOfShoppingList.stream()
-                .map(stockUnitPricingRules::get)
-                .mapToLong(StockKeepingUnitPriceRule::getUnitPriceInPence)
+                .map(pricingRules::get)
+                .mapToLong(PriceRule::getUnitPriceInPence)
                 .sum();
     }
 
@@ -73,16 +72,20 @@ public class CheckoutSystem {
                 .collect(Collectors.groupingBy(Function.identity(), counting()));
 
         return countOfShoppingListGroupedBySkus.keySet().stream()
-                .mapToLong(stockKeepingUnit -> {
-                    StockKeepingUnitPriceRule stockKeepingUnitPriceRule = stockUnitPricingRules.get(stockKeepingUnit);
-                    DiscountRule discountRule = stockKeepingUnitPriceRule.getDiscountRule();
-                    return discountRule == null ? 0 : discountRule.getTotalDiscount(countOfShoppingListGroupedBySkus.get(stockKeepingUnit));
-                }).sum();
+                .mapToLong(stockKeepingUnit -> pricingRules
+                        .get(stockKeepingUnit)
+                        .getDiscountRule()
+                        .map(rule -> rule.getTotalDiscount(countOfShoppingListGroupedBySkus.get(stockKeepingUnit)))
+                        .orElse(0L)
+                ).sum();
     }
 
-    private Map<StockKeepingUnit, StockKeepingUnitPriceRule> convertPricingRulesToMap(List<StockKeepingUnitPriceRule> stockUnitPricingRules) {
-        Map<StockKeepingUnit, StockKeepingUnitPriceRule> stockUnitPriceRuleMap = new HashMap<>();
-        for (StockKeepingUnitPriceRule stockUnitPricingRule : stockUnitPricingRules) {
+    private Map<StockKeepingUnit, PriceRule> convertPricingRulesToMap(List<PriceRule> stockUnitPricingRules) {
+        if(stockUnitPricingRules == null){
+            throw new IllegalArgumentException("List of PriceRule objects cannot be null.");
+        }
+        Map<StockKeepingUnit, PriceRule> stockUnitPriceRuleMap = new HashMap<>();
+        for (PriceRule stockUnitPricingRule : stockUnitPricingRules) {
             stockUnitPriceRuleMap.put(stockUnitPricingRule.getStockKeepingUnit(), stockUnitPricingRule);
         }
         return stockUnitPriceRuleMap;
